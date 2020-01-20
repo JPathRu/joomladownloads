@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.1" type="plugin" group="content" method="upgrade">
+	<name>plg_content_jpjoomladownloads</name>
+	<author>Joomlaportal.ru Team</author>
+	<creationDate>2015-07-08</creationDate>
+	<copyright>(C) 2013-2015 Joomlaportal.ru Team</copyright>
+	<license>GNU General Public License version 3 or later; see license.txt</license>
+	<authorEmail>smart@joomlaportal.ru</authorEmail>
+	<authorUrl>http://joomlaportal.ru</authorUrl>
+	<version>1.0.2</version>
+	<description>PLG_CONTENT_JPJOOMLADOWNLOADS_XML_DESCRIPTION</description>
+	<files>
+		<filename plugin="jpjoomladownloads">jpjoomladownloads.php</filename>
+		<filename>index.html</filename>
+		<folder>layouts</folder>
+	</files>
+	<languages>
+		<language tag="en-GB">language/en-GB/en-GB.plg_content_jpjoomladownloads.ini</language>
+		<language tag="en-GB">language/en-GB/en-GB.plg_content_jpjoomladownloads.sys.ini</language>
+		<language tag="ru-RU">language/ru-RU/ru-RU.plg_content_jpjoomladownloads.ini</language>
+		<language tag="ru-RU">language/ru-RU/ru-RU.plg_content_jpjoomladownloads.sys.ini</language>
+	</languages>
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+				<field
+						name="cachetimeout"
+						type="integer"
+						label="PLG_CONTENT_JPJOOMLADOWNLOADS_CACHETIMEOUT_LABEL"
+						description="PLG_CONTENT_JPJOOMLADOWNLOADS_CACHETIMEOUT_DESC"
+						first="0"
+						last="24"
+						step="1"
+						default="6"/>
+			</fieldset>
+		</fields>
+	</config>
+</extension>
