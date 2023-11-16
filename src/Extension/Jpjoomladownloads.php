@@ -6,11 +6,12 @@
  * @copyright   Copyright (C) 2013-2023 Joomlaportal.ru. All rights reserved.
  * @license     GNU General Public License version 3 or later; see LICENSE
  */
- 
+
 namespace Joomla\Plugin\Content\Jpjoomladownloads\Extension;
 
 use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Http\HttpFactory;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Plugin\CMSPlugin;
@@ -24,17 +25,15 @@ use Joomla\CMS\Plugin\CMSPlugin;
  */
 final class Jpjoomladownloads extends CMSPlugin
 {
-	const PACKAGE_REGEXP = '#(\/cms\/joomla\d\/\d\-\d\-\d+\/Joomla_(\d\-\d+\-\d+)-Stable-Full_Package\.zip)#ism';
-#	const RELEASE_DATE_REGEXP = '#(<relative-time datetime="([^"]+)")#ism';
-	const RELEASE_DATE_REGEXP = '#(<local-time datetime="([^"]+)")#ism';
-	const JOOMLA_DOWNLOAD_URL = 'https://downloads.joomla.org/';
-	const JOOMLA_GITHUB_RELEASE_TAG_URL = 'https://github.com/joomla/joomla-cms/releases/tag/';
+	const JOOMLA_DOWNLOAD_URL = 'https://downloads.joomla.org/cms';
+	const JOOMLA_GITHUB_RELEASES_TAGS_URL = 'https://api.github.com/repos/joomla/joomla-cms/releases/tags';
+	const JOOMLA_API_LATEST_URL = 'https://downloads.joomla.org/api/v1/latest/cms';
 
 	/**
 	 * Returns the list of Joomla versions.
 	 *
 	 * @param   string    $context  The context of the content being passed to the plugin.
-	 * @param   mixed    &$row      An object with a "text" property
+	 * @param   object    $row      An object with a "text" property
 	 * @param   mixed     $params   Additional parameters. See {@see PlgContentContent()}.
 	 * @param   ?int      $page     Optional page number. Unused. Defaults to zero.
 	 *
@@ -42,7 +41,7 @@ final class Jpjoomladownloads extends CMSPlugin
 	 *
 	 * @since   1.0
 	 */
-	public function onContentPrepare(string $context, mixed &$row, mixed &$params, ?int $page = 0): void
+	public function onContentPrepare(string $context, object $row, $params, ?int $page = 0): void
 	{
 		if ($context != 'com_content.article' && $context != 'com_content.category' && $context != 'mod_custom.content')
 		{
@@ -83,67 +82,57 @@ final class Jpjoomladownloads extends CMSPlugin
 	{
 		$data = [];
 
-		$versionInfo      = [];
-		$versionInfo['3'] = ['version' => '3', 'url' => self::JOOMLA_DOWNLOAD_URL . '#latest', 'date' => ''];
-		$versionInfo['4'] = ['version' => '4', 'url' => self::JOOMLA_DOWNLOAD_URL . '/latest', 'date' => ''];
-		$versionInfo['5'] = ['version' => '5', 'url' => self::JOOMLA_DOWNLOAD_URL . '/latest', 'date' => ''];
-
 		try
 		{
-			$http     = HttpFactory::getHttp();
-			$response = $http->get(self::JOOMLA_DOWNLOAD_URL);
+			$http = (new HttpFactory)->getHttp();
 
-			if (200 == $response->code && !empty($response->body))
+			$response = $http->get(self::JOOMLA_API_LATEST_URL);
+			$body     = $response->body;
+
+			if ($response->code != 200 || empty($body))
 			{
-				$m = [];
-				preg_match_all(self::PACKAGE_REGEXP, $response->body, $m);
+				return $data;
+			}
 
-				for ($i = 0, $n = count($m[1]); $i < $n; $i++)
+			$branches = json_decode($response->body, true);
+			$lastTwo  = array_reverse(array_slice($branches['branches'], -2));
+
+			$i = 1;
+
+			foreach ($lastTwo as $branch)
+			{
+				$response = $http->get(self::JOOMLA_GITHUB_RELEASES_TAGS_URL . '/' . $branch['version']);
+				$body     = $response->body;
+
+				if ($response->code != 200 || empty($body))
 				{
-					$url = 'https://downloads.joomla.org' . $m[1][$i];
-					$version = str_replace('-', '.', $m[2][$i]);
-					// $code               = ('2' === $version{0}) ? '25' : '3';
-					$code               = '3';
-					$versionInfo[$code] = ['version' => $version, 'url' => $url, 'date' => ''];
-
-					$http     = HttpFactory::getHttp();
-					$response = $http->get(self::JOOMLA_GITHUB_RELEASE_TAG_URL . $version);
-
-					if (200 == $response->code && !empty($response->body))
-					{
-						$m = [];
-						preg_match_all(self::RELEASE_DATE_REGEXP, $response->body, $m);
-
-						if (isset($m[2]) && isset($m[2][0]))
-						{
-							$strDate = $m[2][0];
-
-							if (strlen($strDate) > 10)
-							{
-								$strDate   = substr($strDate, 0, 10);
-								$dateParts = preg_split('/\-/', $strDate);
-
-								if (3 === count($dateParts))
-								{
-									$versionInfo[$code]['date'] = $dateParts[2] . '.' . $dateParts[1] . '.' . $dateParts[0];
-								}
-							}
-						}
-					}
+					continue;
 				}
+
+				$tagData = json_decode($body);
+
+				$data['latest' . $i . 'name'] = $tagData->name;
+				$data['latest' . $i . 'date'] = HTMLHelper::date($tagData->datepublished_at, 'd.m.Y');
+				$data['latest' . $i . 'version'] = $tagData->tag_name;
+				$versionUrl = str_replace('.', '-', $tagData->tag_name);
+				$data['latest' . $i . 'install'] = self::JOOMLA_DOWNLOAD_URL . '/joomla' . substr($tagData->tag_name, 0, 1)
+					. '/' . $versionUrl . '/Joomla_' . $versionUrl . '-Stable-Full_Package.zip?format=zip';
+				$data['latest' . $i . 'update'] = self::JOOMLA_DOWNLOAD_URL . '/joomla' . substr($tagData->tag_name, 0, 1)
+					. '/' . $versionUrl . '/Joomla_' . $versionUrl . '-Stable-Update_Package.zip?format=zip';
+				$data['latest' . $i . 'linkinstall'] = self::getHtmlLink($tagData->tag_name, $data['latest' . $i . 'install']);
+				$data['latest' . $i . 'linkupdate'] = self::getHtmlLink($tagData->tag_name, $data['latest' . $i. 'update']);
+
+				$i++;
+			}
+
+			if (empty($data))
+			{
+				return $data;
 			}
 		}
 		catch (Exception $exception)
 		{
 			// do nothing (default values will be used)
-		}
-
-		foreach ($versionInfo as $k => $v)
-		{
-			$data['joomla' . $k . 'url']     = $v['url'];
-			$data['joomla' . $k . 'version'] = $v['version'];
-			$data['joomla' . $k . 'date']    = $v['date'];
-			$data['joomla' . $k . 'link']    = self::getHtmlLink($v['version'], $v['url']);
 		}
 
 		return $data;
@@ -159,7 +148,7 @@ final class Jpjoomladownloads extends CMSPlugin
 	 *
 	 * @since   1.0
 	 */
-	private static function getHtmlLink($version, $url): string
+	private static function getHtmlLink(string $version, string $url): string
 	{
 		LayoutHelper::$defaultBasePath = JPATH_PLUGINS . '/content/jpjoomladownloads/layouts';
 
