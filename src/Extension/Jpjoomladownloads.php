@@ -130,7 +130,7 @@ final class Jpjoomladownloads extends CMSPlugin
 				return $data;
 			}
 		}
-		catch (Exception $exception)
+		catch (\Exception $e)
 		{
 			// do nothing (default values will be used)
 		}
