@@ -122,6 +122,21 @@ final class Jpjoomladownloads extends CMSPlugin
 				$data['latest' . $i . 'linkinstall'] = self::getHtmlLink($tagData->tag_name, $data['latest' . $i . 'install']);
 				$data['latest' . $i . 'linkupdate'] = self::getHtmlLink($tagData->tag_name, $data['latest' . $i. 'update']);
 
+				foreach ($tagData->assets as $asset)
+				{
+					if (strpos($asset->browser_download_url, '.zip') && strpos(strtolower($asset->browser_download_url), 'full'))
+					{
+						$data['latest' . $i . 'installgh'] = $asset->browser_download_url;
+						$data['latest' . $i . 'linkinstallgh'] = self::getHtmlLink($tagData->tag_name, $asset->browser_download_url);
+					}
+
+					if (strpos($asset->browser_download_url, '.zip') && strpos(strtolower($asset->browser_download_url), 'update'))
+					{
+						$data['latest' . $i . 'updategh'] = $asset->browser_download_url;
+						$data['latest' . $i . 'linkupdategh'] = self::getHtmlLink($tagData->tag_name, $asset->browser_download_url);
+					}
+				}
+
 				$i++;
 			}
 
