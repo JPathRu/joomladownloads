@@ -3,7 +3,7 @@
  * @package     Joomlaportal.Plugins
  * @subpackage  Content.JPJoomlaDownloads
  * @author      Joomlaportal.ru Team <smart@joomlaportal.ru>
- * @copyright   Copyright (C) 2013-2023 Joomlaportal.ru. All rights reserved.
+ * @copyright   Copyright (C) 2013-2024 Joomlaportal.ru. All rights reserved.
  * @license     GNU General Public License version 3 or later; see LICENSE
  */
 
