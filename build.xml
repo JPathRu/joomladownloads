@@ -6,7 +6,7 @@
 	<property name="directory" value="build" />
 	<property name="prefix" value="plg_content" />
 	<property name="extension" value="jpjoomladownloads" />
-	<property name="version" value="2.0.0-dev" />
+	<property name="version" value="2.0.0" />
 	<target name="make-dev" description="Builds the extension release package for development testing.">
 		<echo msg="Deleting old development build." />
 		<delete quiet="yes">
